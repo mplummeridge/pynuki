@@ -23,7 +23,6 @@ from .utils import hash_token, logger
 # Default values
 REQUESTS_TIMEOUT = 5
 
-
 class InvalidCredentialsException(Exception):
     pass
 
@@ -126,7 +125,7 @@ class NukiBridge(object):
 
     def list(self, device_type=None):
         data = self.__rq("list")
-        if device_type is not None:
+        if self.is_hardware_bridge and device_type is not None:
             return [x for x in data if x.get("deviceType") == device_type]
         return data
 
@@ -212,8 +211,12 @@ class NukiBridge(object):
 
             # Merge lock_data and state_data
             data = {**device_data, **state_data}
-
             dev_type = device_data.get("deviceType")
+
+            if not self.is_hardware_bridge and dev_type is None:
+                data['deviceType'] = const.DEVICE_TYPE_LOCK
+                dev_type = const.DEVICE_TYPE_LOCK
+
             if dev_type == const.DEVICE_TYPE_LOCK:
                 dev = NukiLock(self, data)
             elif dev_type == const.DEVICE_TYPE_OPENER:
